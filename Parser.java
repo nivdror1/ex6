@@ -22,6 +22,9 @@ public class Parser {
     private static final Pattern AT_PATTERN= Pattern.compile(AT);
     private static final Pattern COMMENT_PATTERN= Pattern.compile(ONE_LINER_COMMENT);
 
+    private static final String ASSIGNMENT="assignment";
+    private static final String JUMP_INSTRUCTION="JUMP";
+
     /** the text written in hack assembly language*/
     private ArrayList<String> asmLines;
     /** the current matcher*/
@@ -30,6 +33,8 @@ public class Parser {
     private String curRegisters;
     /** the current compute instruction*/
     private String curInstruction;
+    /** the current jump instruction*/
+    private String curJump;
     /** an object which convert an asm line to binary line*/
     private BinaryConverter convert;
     /**
@@ -131,6 +136,7 @@ public class Parser {
             if(this.curMatcher.lookingAt()) //check for the compute instruction
             {
                 this.curInstruction=line.substring(0,this.curMatcher.end()-1);
+                convert.convertCInstruction(curRegisters,curInstruction,ASSIGNMENT);
                 //todo send curRegister and curInstruction to convert to binary
             }
         }else
@@ -142,7 +148,7 @@ public class Parser {
                 line=line.substring(curMatcher.end()); // advance to the jump instruction
                 this.curMatcher= JUMP_PATTERN.matcher(line);
                 if(this.curMatcher.lookingAt()){
-                    this.curInstruction=line.substring(0,this.curMatcher.end()-1);
+                    this.curJump=line.substring(0,this.curMatcher.end()-1);
                     //todo send curRegister and curInstruction to convert to binary
                 }
                 //todo suppose to find here the jump bits-maybe do a lot of switch instead of regex
