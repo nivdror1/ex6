@@ -16,15 +16,17 @@ public class IOReader {
             try (FileReader commandFile = new FileReader(file);// define the BufferReader
                 BufferedReader reader =new BufferedReader(commandFile)){
 
-                ArrayList<String> lines= new ArrayList<>(); //define the container for the input
-                Parser parser= new Parser(lines); //define a new parser
+                ArrayList<String> lines; //define the container for the input
+                Parser parser= new Parser(); //define a new parser
                 String text;
 
                 while((text= reader.readLine())!=null) // add the lines to the container
                 {
                     parser.getAsmLines().add(text);
                 }
-                //todo sending asmLines to the parser
+                parser.parseAsmFile(); // parse the asm text
+                parser.getBinaryOutput(); // get the binary text
+                //todo output the binary text
 
             }
             catch(IOException e){

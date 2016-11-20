@@ -8,7 +8,7 @@ public class Parser {
     private static final String ONE_LINER_COMMENT ="^/{2}";
     private static final String EMPTY_LINE= "^\\s*+$";
     private static final String DIGITS= "^\\d++";
-    private static final String REGISTERS= "(A|D|M|MD|AM|AD|AMD)={1}"; //todo missing null(000) could it be reverse?
+    private static final String REGISTERS= "(A|D|M|MD|AM|AD|AMD)={1}"; //todo missing null(000)
     private static final String JUMP_REGISTERS= "(0|D|M);{1}";
     private static final String COMPUTE = "0|1|-1|D|A|!D|!A|-D|-A|D\\+1|A\\+1|D-1|A-1|D\\+A|D-A|A-D|D&A|" +
             "D\\|A|M|!M|-M|M\\+1|M-1|D\\+M|D-M|M-D|D&M|D\\|M";
@@ -40,8 +40,8 @@ public class Parser {
     /**
      * a constructor
      */
-    public Parser(ArrayList<String> asmLines){
-        this.asmLines= asmLines;
+    public Parser(){
+        this.asmLines= new ArrayList<>();
         this.convert= new BinaryConverter();
     }
 
@@ -51,6 +51,10 @@ public class Parser {
      */
     public ArrayList<String> getAsmLines(){
         return this.asmLines;
+    }
+
+    public ArrayList<String> getBinaryOutput(){
+        return convert.getBinaryLines();
     }
 
     /**
@@ -78,7 +82,6 @@ public class Parser {
             }
 
         }
-        //todo a instruction, c instruction
     }
 
 
@@ -126,34 +129,53 @@ public class Parser {
         return false;
     }
 
+    /**
+     * parse and convert the c instruction from asm code to binary code
+     * @param line a string that represent the specific line in the asm file
+     */
     private void dealWithCInstruction(String line){
         this.curMatcher= REGISTERS_PATTERN.matcher(line);
         if(this.curMatcher.find()) //check for the destination registers
         {
-            this.curRegisters=line.substring(0,curMatcher.end()-2); //the registers string
-            line=line.substring(curMatcher.end()); // advance to the compute instruction
-            this.curMatcher= COMPUTE_PATTERN.matcher(line);
-            if(this.curMatcher.lookingAt()) //check for the compute instruction
-            {
-                this.curInstruction=line.substring(0,this.curMatcher.end()-1);
-                convert.convertCInstruction(curRegisters,curInstruction,ASSIGNMENT);
-                //todo send curRegister and curInstruction to convert to binary
-            }
-        }else
-            {
-            this.curMatcher= JUMP_REGISTERS_PATTERN.matcher(line);
-            if(this.curMatcher.find())
-            {
-                this.curRegisters=line.substring(0,curMatcher.end()-1);
-                line=line.substring(curMatcher.end()); // advance to the jump instruction
-                this.curMatcher= JUMP_PATTERN.matcher(line);
-                if(this.curMatcher.lookingAt()){
-                    this.curJump=line.substring(0,this.curMatcher.end()-1);
-                    //todo send curRegister and curInstruction to convert to binary
-                }
-                //todo suppose to find here the jump bits-maybe do a lot of switch instead of regex
+            assignmentInstruction(line); // parse the assignment instruction
+        }
+        // parse the jump instruction
+        this.curMatcher= JUMP_REGISTERS_PATTERN.matcher(line);
+        jumpInstruction(line);
+    }
+
+    /**
+     * parse and convert the assignment instruction
+     * @param line a string that represent the specific line in the asm file
+     */
+    private void assignmentInstruction(String line){
+        this.curRegisters=line.substring(0,curMatcher.end()-2); //the registers string
+        line=line.substring(curMatcher.end()); // advance to the compute instruction
+        this.curMatcher= COMPUTE_PATTERN.matcher(line);
+        if(this.curMatcher.lookingAt()) //check for the compute instruction
+        { //set the compute instruction into curInstruction
+            this.curInstruction=line.substring(0,this.curMatcher.end()-1);
+            // convert the c instruction
+            convert.convertCInstruction(curRegisters,curInstruction,null);
+        }
+    }
+
+    /**
+     * parse and convert the jump instruction
+     * @param line a string that represent the specific line in the asm file
+     */
+    private void jumpInstruction(String line){
+        if(this.curMatcher.find()) // check for a jump instruction
+        { //set the destination registers in curRegisters
+            this.curRegisters=line.substring(0,curMatcher.end()-1);
+            line=line.substring(curMatcher.end()); // advance to the jump instruction
+            this.curMatcher= JUMP_PATTERN.matcher(line);
+            if(this.curMatcher.lookingAt())
+            { //set the jump instruction into curJump
+                this.curJump=line.substring(0,this.curMatcher.end()-1);
+                // convert the c instruction
+                convert.convertCInstruction(curRegisters,null,curJump);
             }
         }
-
     }
 }

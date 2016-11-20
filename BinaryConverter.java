@@ -47,6 +47,70 @@ public class BinaryConverter {
     private static final String JLE_BINARY_REPR="110";
     private static final String JMP_BINARY_REPR="111";
 
+    // the compute instruction
+    private static final String CONSTANT_ZERO="0";
+    private static final String CONSTANT_ONE="1";
+    private static final String CONSTANT_MINUS_ONE="-1";
+    private static final String D="D";
+    private static final String NOT_D="!D";
+    private static final String NOT_A="!A";
+    private static final String A="A";
+    private static final String MINUS_D="-D";
+    private static final String MINUS_A="-A";
+    private static final String D_PLUS_ONE="D+1";
+    private static final String A_PLUS_ONE="A+1";
+    private static final String D_MINUS_ONE="D-1";
+    private static final String A_MINUS_ONE="A-1";
+    private static final String D_PLUS_A="D+A";
+    private static final String D_MINUS_A="D-A";
+    private static final String A_MINUS_D="A-D";
+    private static final String D_AND_A="D&A";
+    private static final String D_OR_A="D|A";
+    private static final String M="M";
+    private static final String NOT_M="!M";
+    private static final String MINUS_M="-M";
+    private static final String M_PLUS_ONE="M+1";
+    private static final String M_MINUS_ONE="M-1";
+    private static final String D_PLUS_M="D+M";
+    private static final String D_MINUS_M="D-M";
+    private static final String M_MINUS_D="M-D";
+    private static final String D_AND_M="D&M";
+    private static final String D_OR_M="D|M";
+
+    // the binary representation of the compute instructions
+    private static final String CONSTANT_ZERO_BINARY="0101010";
+    private static final String CONSTANT_ONE_BINARY="0111111";
+    private static final String CONSTANT_MINUS_ONE_BINARY="0111010";
+    private static final String D_BINARY="0001100";
+    private static final String A_BINARY="0110000";
+    private static final String NOT_D_BINARY="0001101";
+    private static final String NOT_A_BINARY="0110001";
+    private static final String MINUS_D_BINARY="0001111";
+    private static final String MINUS_A_BINARY="0110011";
+    private static final String D_PLUS_ONE_BINARY="0011111";
+    private static final String A_PLUS_ONE_BINARY="0110111";
+    private static final String D_MINUS_ONE_BINARY="0001110";
+    private static final String A_MINUS_ONE_BINARY="0110010";
+    private static final String D_PLUS_A_BINARY="0000010";
+    private static final String D_MINUS_A_BINARY="0010011";
+    private static final String A_MINUS_D_BINARY="0000111";
+    private static final String D_AND_A_BINARY="0000000";
+    private static final String D_OR_A_BINARY="0010101";
+    private static final String M_BINARY="1110000";
+    private static final String NOT_M_BINARY="1110001";
+    private static final String MINUS_M_BINARY="1110011";
+    private static final String M_PLUS_ONE_BINARY="1110111";
+    private static final String M_MINUS_ONE_BINARY="1110010";
+    private static final String D_PLUS_M_BINARY="1000010";
+    private static final String D_MINUS_M_BINARY="1010011";
+    private static final String M_MINUS_D_BINARY="1000111";
+    private static final String D_AND_M_BINARY="1000000";
+    private static final String D_OR_M_BINARY="1010101";
+
+
+
+
+
 
 
 
@@ -57,6 +121,10 @@ public class BinaryConverter {
 
     public BinaryConverter(){
         this.binaryLines= new ArrayList<>();
+    }
+
+    public ArrayList<String> getBinaryLines(){
+        return this.binaryLines;
     }
 
     /**
@@ -128,22 +196,21 @@ public class BinaryConverter {
      */
     public void convertCInstruction(String register, String instruction,String jump){
         this.curLine+=C_START_BITS; // add the start of the c instruction in bits
-        //todo compute bits
-        convertDestBits(register); // convert the dest registers into binary code
+        convertComputeToBits(instruction); // todo i need to understand if the compute bits are zero when jump occurs
+        convertDestToBits(register); // convert the dest registers into binary code
         if(jump!=null){
-            convertJumpBits(jump); //convert the jump instructions into binary code
+            convertJumpToBits(jump); //convert the jump instructions into binary code
         }else{
             this.curLine+=NO_JUMP; //add 000 to the end of the c assignment instruction
         }
-
-
+        this.binaryLines.add(this.curLine); // add to the binary code output
     }
 
     /**
      * convert the dest registers into binary code
      * @param register the dest register/s
      */
-    private void convertDestBits(String register){
+    private void convertDestToBits(String register){
         //todo i didn't address to the null situation
         if(register.equals(M_REGISTER)){
             this.curLine+= M_BINARY_REPR;
@@ -163,11 +230,10 @@ public class BinaryConverter {
     }
 
     /**
-     * onvert the jump instructions into binary code
+     * convert the jump instructions into binary code
      * @param jump a representation of the jump instruction in asm code
      */
-    private void convertJumpBits(String jump){
-        //todo i didn't address to the null situation
+    private void convertJumpToBits(String jump){
         if(jump.equals(JGT)){
             this.curLine+=JGT_BINARY_REPR;
         }else if (jump.equals(JEQ)){
@@ -183,6 +249,71 @@ public class BinaryConverter {
         }else if (jump.equals(JMP)){
             this.curLine+=JMP_BINARY_REPR;
         }
+    }
+
+    /**
+     * convert the compute instructions into binary code
+     * @param instruction a representation of the compute instruction in asm code
+     */
+    private void convertComputeToBits(String instruction){
+        if(instruction.equals(CONSTANT_ZERO)){
+            this.curLine+=CONSTANT_ZERO_BINARY;
+        }else if(instruction.equals(CONSTANT_ONE)){
+            this.curLine+=CONSTANT_ONE_BINARY;
+        }else if(instruction.equals(CONSTANT_MINUS_ONE)){
+            this.curLine+=CONSTANT_MINUS_ONE_BINARY;
+        }else if(instruction.equals(D)){
+            this.curLine+=D_BINARY;
+        }else if(instruction.equals(A)){
+            this.curLine+=A_BINARY;
+        }else if(instruction.equals(NOT_D)){
+            this.curLine+=NOT_D_BINARY;
+        }else if(instruction.equals(NOT_A)){
+            this.curLine+=NOT_A_BINARY;
+        }else if(instruction.equals(MINUS_D)){
+            this.curLine+=MINUS_D_BINARY;
+        }else if(instruction.equals(MINUS_A)){
+            this.curLine+=MINUS_A_BINARY;
+        }else if(instruction.equals(D_PLUS_ONE)){
+            this.curLine+=D_PLUS_ONE_BINARY;
+        }else if(instruction.equals(A_PLUS_ONE)){
+            this.curLine+=A_PLUS_ONE_BINARY;
+        }else if(instruction.equals(D_MINUS_ONE)){
+            this.curLine+=D_MINUS_ONE_BINARY;
+        }else if(instruction.equals(A_MINUS_ONE)){
+            this.curLine+=A_MINUS_ONE_BINARY;
+        }else if(instruction.equals(D_PLUS_A)){
+            this.curLine+=D_PLUS_A_BINARY;
+        }else if(instruction.equals(D_MINUS_A)){
+            this.curLine+=D_MINUS_A_BINARY;
+        }else if(instruction.equals(A_MINUS_D)){
+            this.curLine+=A_MINUS_D_BINARY;
+        }else if(instruction.equals(D_AND_A)){
+            this.curLine+=D_AND_A_BINARY;
+        }else if(instruction.equals(D_OR_A)){
+            this.curLine+=D_OR_A_BINARY;
+        }else if(instruction.equals(M)){
+            this.curLine+=M_BINARY;
+        }else if(instruction.equals(NOT_M)){
+            this.curLine+=NOT_M_BINARY;
+        }else if(instruction.equals(MINUS_M)){
+            this.curLine+=MINUS_M_BINARY;
+        }else if(instruction.equals(M_PLUS_ONE)){
+            this.curLine+=M_PLUS_ONE_BINARY;
+        }else if(instruction.equals(M_MINUS_ONE)){
+            this.curLine+=M_MINUS_ONE_BINARY;
+        }else if(instruction.equals(D_PLUS_M)){
+            this.curLine+=D_PLUS_M_BINARY;
+        }else if(instruction.equals(D_MINUS_M)){
+            this.curLine+=D_MINUS_M_BINARY;
+        }else if(instruction.equals(M_MINUS_D)){
+            this.curLine+=M_MINUS_D_BINARY;
+        }else if(instruction.equals(D_AND_M)){
+            this.curLine+=D_AND_M_BINARY;
+        }else if(instruction.equals(D_OR_M)){
+            this.curLine+=D_OR_M_BINARY;
+        }
+
     }
 }
 
