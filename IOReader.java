@@ -1,22 +1,31 @@
 import java.io.*;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** the purpose of this class is to read and write the IO*/
 public class IOReader {
     private static final String IO_ERROR_MESSAGE= "IO error has happened";
     private static final String FILE_NOT_EXISTS="enter another file, since the path was wrong";
+    private static final String HACK="hack";
+    private static final String DOT="\\w++\\.";
+    private static final Pattern DOT_PATTERN= Pattern.compile(DOT);
+
 
     /** the main method which control the progress of the assembler*/
     public static void main(String[] args)
     {
         //todo check what is the input( xxx.asm or dir or another file)
         File file= new File(args[0]);
+        String outputFileName=setOutputFileName(args[0]);
         if(file.exists()) // check if the file exists
         {
-            try (FileReader commandFile = new FileReader(file);// define the BufferReader
-                BufferedReader reader =new BufferedReader(commandFile)){
+            try (FileReader asmFile = new FileReader(file);// define the BufferReader and BufferWriter
+                BufferedReader reader =new BufferedReader(asmFile);
+                FileWriter hackFile =new FileWriter((outputFileName));
+                BufferedWriter writer= new BufferedWriter(hackFile)){
 
-                ArrayList<String> lines; //define the container for the input
+
                 Parser parser= new Parser(); //define a new parser
                 String text;
 
@@ -25,8 +34,11 @@ public class IOReader {
                     parser.getAsmLines().add(text);
                 }
                 parser.parseAsmFile(); // parse the asm text
-                parser.getBinaryOutput(); // get the binary text
-                //todo output the binary text
+
+                //write the binary code to an output file
+                for(int i=0;i<parser.getBinaryOutput().size();i++){
+                    writer.write(parser.getBinaryOutput().get(i)+"\n");
+                }
 
             }
             catch(IOException e){
@@ -36,5 +48,19 @@ public class IOReader {
         else{
             System.out.println(FILE_NOT_EXISTS);
         }
+    }
+
+    /**
+     * get the name of the asm file and exchange it to hack file
+     * @param inputFileName the input file name
+     * @return the file name but with a suffix of a hack file
+     */
+    private static String setOutputFileName(String inputFileName){
+        Matcher m= DOT_PATTERN.matcher(inputFileName);
+        if(m.lookingAt()){ // find the dot char
+            inputFileName= inputFileName.substring(0,m.end()); // delete the asm suffix
+            return inputFileName+HACK; //add the hack suffix
+        }
+        return "didn't find the dot"; //todo maybe do an exception if not write something meaningful
     }
 }

@@ -9,8 +9,9 @@ public class BinaryConverter {
     private static final int ONE=1;
     private static final int MAX_BINARY_LENGTH=16;
 
+    private static final String ZERO_BINARY_REPR="0000000000000000";
     private static final String C_START_BITS="111";
-    private static final String NO_JUMP="000";
+    private static final String NO_JUMP_OR_NO_DEST="000";
     //the destination registers
     private static final String D_REGISTER= "D";
     private static final String A_REGISTER= "A";
@@ -121,6 +122,7 @@ public class BinaryConverter {
 
     public BinaryConverter(){
         this.binaryLines= new ArrayList<>();
+        this.curLine="";
     }
 
     public ArrayList<String> getBinaryLines(){
@@ -150,6 +152,9 @@ public class BinaryConverter {
         int remainder;
         String reverseBinaryNumber="";
         // the convert decimal to binary process
+        if(decimal==0){
+            return ZERO_BINARY_REPR;
+        }
         while(decimal!=ONE)
         {
             remainder=decimal%DIVISOR; // modulo by two
@@ -169,7 +174,7 @@ public class BinaryConverter {
     private String reverseNumber(String reverseBinaryNumber){
         String binaryNumber="";
         // reverse the number
-        for(int i=reverseBinaryNumber.length();i>0;i--)
+        for(int i=reverseBinaryNumber.length()-1;i>=0;i--)
         {
             binaryNumber+=reverseBinaryNumber.charAt(i);
         }
@@ -183,7 +188,7 @@ public class BinaryConverter {
      * @return return a full 16 bit binary number as string
      */
     private String addZeros(String line){
-        for(int i=line.length();i<=MAX_BINARY_LENGTH;i++){
+        for(int i=line.length();i<MAX_BINARY_LENGTH;i++){
             line+='0';
         }
         return line;
@@ -196,14 +201,16 @@ public class BinaryConverter {
      */
     public void convertCInstruction(String register, String instruction,String jump){
         this.curLine+=C_START_BITS; // add the start of the c instruction in bits
-        convertComputeToBits(instruction); // todo i need to understand if the compute bits are zero when jump occurs
-        convertDestToBits(register); // convert the dest registers into binary code
+        convertComputeToBits(instruction); // convert the computation instructions
         if(jump!=null){
+            this.curLine+=NO_JUMP_OR_NO_DEST; //add 000 as the dest bits
             convertJumpToBits(jump); //convert the jump instructions into binary code
         }else{
-            this.curLine+=NO_JUMP; //add 000 to the end of the c assignment instruction
+            convertDestToBits(register); // convert the dest registers into binary code
+            this.curLine+=NO_JUMP_OR_NO_DEST; //add 000 to the end of the c assignment instruction
         }
         this.binaryLines.add(this.curLine); // add to the binary code output
+        this.curLine="";
     }
 
     /**
@@ -211,7 +218,6 @@ public class BinaryConverter {
      * @param register the dest register/s
      */
     private void convertDestToBits(String register){
-        //todo i didn't address to the null situation
         if(register.equals(M_REGISTER)){
             this.curLine+= M_BINARY_REPR;
         }else if(register.equals(D_REGISTER)){

@@ -10,8 +10,8 @@ public class Parser {
     private static final String DIGITS= "^\\d++";
     private static final String REGISTERS= "(A|D|M|MD|AM|AD|AMD)={1}"; //todo missing null(000)
     private static final String JUMP_REGISTERS= "(0|D|M);{1}";
-    private static final String COMPUTE = "0|1|-1|D|A|!D|!A|-D|-A|D\\+1|A\\+1|D-1|A-1|D\\+A|D-A|A-D|D&A|" +
-            "D\\|A|M|!M|-M|M\\+1|M-1|D\\+M|D-M|M-D|D&M|D\\|M";
+    private static final String COMPUTE = "^(0|1|-1|D|A|!D|!A|-D|-A|D\\+1|A\\+1|D-1|A-1|D\\+A|D-A|A-D|D&A|" +
+            "D\\|A|M|!M|-M|M\\+1|M-1|D\\+M|D-M|M-D|D&M|D\\|M)$";
     private static final String JUMP= "JGT|JEQ|JGE|JLT|JNE|JLE|JMP";
     private static final Pattern COMPUTE_PATTERN = Pattern.compile(COMPUTE);
     private static final Pattern JUMP_REGISTERS_PATTERN= Pattern.compile(JUMP_REGISTERS);
@@ -138,6 +138,7 @@ public class Parser {
         if(this.curMatcher.find()) //check for the destination registers
         {
             assignmentInstruction(line); // parse the assignment instruction
+            return;
         }
         // parse the jump instruction
         this.curMatcher= JUMP_REGISTERS_PATTERN.matcher(line);
@@ -149,12 +150,12 @@ public class Parser {
      * @param line a string that represent the specific line in the asm file
      */
     private void assignmentInstruction(String line){
-        this.curRegisters=line.substring(0,curMatcher.end()-2); //the registers string
+        this.curRegisters=line.substring(0,curMatcher.end()-1); //the registers string
         line=line.substring(curMatcher.end()); // advance to the compute instruction
         this.curMatcher= COMPUTE_PATTERN.matcher(line);
         if(this.curMatcher.lookingAt()) //check for the compute instruction
         { //set the compute instruction into curInstruction
-            this.curInstruction=line.substring(0,this.curMatcher.end()-1);
+            this.curInstruction=line.substring(0,this.curMatcher.end());
             // convert the c instruction
             convert.convertCInstruction(curRegisters,curInstruction,null);
         }
@@ -167,14 +168,14 @@ public class Parser {
     private void jumpInstruction(String line){
         if(this.curMatcher.find()) // check for a jump instruction
         { //set the destination registers in curRegisters
-            this.curRegisters=line.substring(0,curMatcher.end()-1);
-            line=line.substring(curMatcher.end()); // advance to the jump instruction
+            this.curInstruction=line.substring(0,this.curMatcher.end()-1);
+            line=line.substring(this.curMatcher.end()); // advance to the jump instruction
             this.curMatcher= JUMP_PATTERN.matcher(line);
             if(this.curMatcher.lookingAt())
             { //set the jump instruction into curJump
-                this.curJump=line.substring(0,this.curMatcher.end()-1);
+                this.curJump=line.substring(0,this.curMatcher.end());
                 // convert the c instruction
-                convert.convertCInstruction(curRegisters,null,curJump);
+                this.convert.convertCInstruction(null,this.curInstruction,this.curJump);
             }
         }
     }
