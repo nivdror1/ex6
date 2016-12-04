@@ -9,7 +9,6 @@ public class IOReader {
     private static final String FILE_NOT_EXISTS="enter another file, since the path was wrong";
     private static final String HACK="hack";
     private static final String DOT="\\w++\\.";
-    private static final Pattern DOT_PATTERN= Pattern.compile(DOT);
     private static final String ASM= DOT+"asm";
     private static final Pattern ASM_PATTERN =Pattern.compile(ASM);
 
@@ -37,14 +36,7 @@ public class IOReader {
      * @return the file name but with a suffix of a hack file
      */
     private static String setOutputFileName(String inputFileName){
-        //return inputFileName.substring(0, inputFileName.length()-3) + HACK;
-        Matcher m= DOT_PATTERN.matcher(inputFileName);
-        if(m.lookingAt()){ // find the dot char
-            inputFileName= inputFileName.substring(0,m.end()); // delete the asm suffix
-            return inputFileName+HACK; //add the hack suffix
-        }
-        return "didn't find the dot"; //todo maybe do an exception if not write something meaningful
-
+        return inputFileName.substring(0, inputFileName.length()-3) + HACK;
     }
 
     /**
@@ -94,7 +86,7 @@ public class IOReader {
      *@param file an asm file
      */
     private static void dealWithASingleFile(File file){
-        String outputFileName = setOutputFileName(file.getName());
+        String outputFileName = setOutputFileName(file.getAbsolutePath());
 
         try (FileReader asmFile = new FileReader(file);// define the BufferReader and BufferWriter
              BufferedReader reader = new BufferedReader(asmFile);
