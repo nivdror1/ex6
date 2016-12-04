@@ -12,6 +12,7 @@ public class BinaryConverter {
     private static final String ZERO_BINARY_REPR="0000000000000000";
     private static final String C_START_BITS="111";
     private static final String NO_JUMP_OR_NO_DEST="000";
+    private static final String NO_COMPUTE="0000";
     //the destination registers
     private static final String D_REGISTER= "D";
     private static final String A_REGISTER= "A";
@@ -78,6 +79,14 @@ public class BinaryConverter {
     private static final String D_AND_M="D&M";
     private static final String D_OR_M="D|M";
 
+    // the shift instruction
+    private static final String D_LEFT_SHIFT="D<<";
+    private static final String D_RIGHT_SHIFT="D>>";
+    private static final String A_LEFT_SHIFT="A<<";
+    private static final String A_RIGHT_SHIFT="A>>";
+    private static final String M_LEFT_SHIFT="M<<";
+    private static final String M_RIGHT_SHIFT="M>>";
+
     // the binary representation of the compute instructions
     private static final String CONSTANT_ZERO_BINARY="0101010";
     private static final String CONSTANT_ONE_BINARY="0111111";
@@ -108,11 +117,13 @@ public class BinaryConverter {
     private static final String D_AND_M_BINARY="1000000";
     private static final String D_OR_M_BINARY="1010101";
 
-
-
-
-
-
+    // the binary representation of the shift instructions
+    private static final String D_LEFT_SHIFT_BINARY="101011";
+    private static final String D_RIGHT_SHIFT_BINARY="101001";
+    private static final String A_LEFT_SHIFT_BINARY="101010";
+    private static final String A_RIGHT_SHIFT_BINARY="101000";
+    private static final String M_LEFT_SHIFT_BINARY="101110";
+    private static final String M_RIGHT_SHIFT_BINARY="101100";
 
 
     /** the text written in binary language*/
@@ -198,10 +209,16 @@ public class BinaryConverter {
      * convert the c instruction written in asm into binary code
      * @param register a representation of the dest registers
      * @param instruction a representation of the compute instruction
+     * @param shift a representation of the shift instruction
      */
-    public void convertCInstruction(String register, String instruction,String jump){
-        this.curLine+=C_START_BITS; // add the start of the c instruction in bits
-        convertComputeToBits(instruction); // convert the computation instructions
+    public void convertCInstruction(String register, String instruction,String jump,String shift){
+        if(shift!=null){
+            convertShiftToBits(shift); //convert the shift operation
+            this.curLine+=NO_COMPUTE; // add zero to the four remaining bits in the compute bits
+        }else{
+            this.curLine+=C_START_BITS; // add the start of the c instruction in bits
+            convertComputeToBits(instruction); // convert the computation instructions
+        }
         if(jump!=null){
             this.curLine+=NO_JUMP_OR_NO_DEST; //add 000 as the dest bits
             convertJumpToBits(jump); //convert the jump instructions into binary code
@@ -319,7 +336,31 @@ public class BinaryConverter {
         }else if(instruction.equals(D_OR_M)){
             this.curLine+=D_OR_M_BINARY;
         }
+    }
 
+    /**
+     * convert the shift instruction to bits
+     * @param shift the operation to be converted
+     */
+    private void convertShiftToBits(String shift){
+        if(shift.equals(D_LEFT_SHIFT)){
+            this.curLine+=D_LEFT_SHIFT_BINARY;
+        }
+        else if(shift.equals(D_RIGHT_SHIFT)){
+            this.curLine+=D_RIGHT_SHIFT_BINARY;
+        }
+        else if(shift.equals(A_LEFT_SHIFT)){
+            this.curLine+=A_LEFT_SHIFT_BINARY;
+        }
+        else if(shift.equals(A_RIGHT_SHIFT)){
+            this.curLine+=A_RIGHT_SHIFT_BINARY;
+        }
+        if(shift.equals(M_LEFT_SHIFT)){
+            this.curLine+=M_LEFT_SHIFT_BINARY;
+        }
+        else if(shift.equals(M_RIGHT_SHIFT)){
+            this.curLine+=M_RIGHT_SHIFT_BINARY;
+        }
     }
 }
 

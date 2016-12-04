@@ -12,6 +12,8 @@ public class Parser {
     private static final String JUMP_REGISTERS= "(0|D|M);{1}";
     private static final String COMPUTE = "^(0|1|-1|D|A|!D|!A|-D|-A|D\\+1|A\\+1|D-1|A-1|D\\+A|D-A|A-D|D&A|" +
             "D\\|A|M|!M|-M|M\\+1|M-1|D\\+M|D-M|M-D|D&M|D\\|M)$";
+    private static final String SHIFT = "^(D>>|D<<|A>>|A<<|M>>|M<<)$";
+    private static final Pattern SHIFT_PATTERN =Pattern.compile(SHIFT);
     private static final String JUMP= "JGT|JEQ|JGE|JLT|JNE|JLE|JMP";
     private static final Pattern COMPUTE_PATTERN = Pattern.compile(COMPUTE);
     private static final Pattern JUMP_REGISTERS_PATTERN= Pattern.compile(JUMP_REGISTERS);
@@ -22,8 +24,6 @@ public class Parser {
     private static final Pattern AT_PATTERN= Pattern.compile(AT);
     private static final Pattern COMMENT_PATTERN= Pattern.compile(ONE_LINER_COMMENT);
 
-    private static final String ASSIGNMENT="assignment";
-    private static final String JUMP_INSTRUCTION="JUMP";
 
     /** the text written in hack assembly language*/
     private ArrayList<String> asmLines;
@@ -37,6 +37,8 @@ public class Parser {
     private String curJump;
     /** an object which convert an asm line to binary line*/
     private BinaryConverter convert;
+
+    private String shift;
     /**
      * a constructor
      */
@@ -63,10 +65,13 @@ public class Parser {
      */
     public void parseAsmFile()
     {
-        //todo first pass (deal with labels)
+        PreProccesor preProccesor = new PreProccesor();
+        preProccesor.buildSymbolMap(this.getAsmLines());
+        preProccesor.replaceSymbols(this.asmLines);
         // the second pass
         for(int i=0;i<asmLines.size();i++)
         {
+            resetAttributes();
             if(deleteBlankLines(asmLines.get(i))) //check for a blank line
             {
                 continue;
@@ -107,6 +112,7 @@ public class Parser {
         return m.lookingAt();
     }
 
+
     /**
      * parse A instruction
      * @param line a string that represent the specific line in the asm file
@@ -120,11 +126,10 @@ public class Parser {
             m=DIGITS_PATTERN.matcher(line);
             if(m.lookingAt()) // check for digits that represent a location in the memory
             {
-                line=line.substring(0,m.end()); //delete the comment if it exists after the number
+                line = line.substring(0, m.end()); //delete the comment if it exists after the number
                 convert.convertAInstruction(line); //convert to binary
                 return true;
             }
-            //todo to address the label/symbol problem
         }
         return false;
     }
@@ -140,8 +145,8 @@ public class Parser {
             assignmentInstruction(line); // parse the assignment instruction
             return;
         }
-        // parse the jump instruction
-        this.curMatcher= JUMP_REGISTERS_PATTERN.matcher(line);
+        // parse the jump condition and instruction
+        line= jumpCondition(line);
         jumpInstruction(line);
     }
 
@@ -157,7 +162,15 @@ public class Parser {
         { //set the compute instruction into curInstruction
             this.curInstruction=line.substring(0,this.curMatcher.end());
             // convert the c instruction
-            convert.convertCInstruction(curRegisters,curInstruction,null);
+            convert.convertCInstruction(curRegisters,curInstruction,curJump,shift);
+        }else{
+            this.curMatcher=SHIFT_PATTERN.matcher(line);
+            if(this.curMatcher.lookingAt()) //check for the shift instruction
+            {
+                this.shift=line.substring(0,this.curMatcher.end());
+                //convert the shift instruction
+                convert.convertCInstruction(curRegisters,curInstruction,curJump,shift);
+            }
         }
     }
 
@@ -166,17 +179,45 @@ public class Parser {
      * @param line a string that represent the specific line in the asm file
      */
     private void jumpInstruction(String line){
-        if(this.curMatcher.find()) // check for a jump instruction
+
+        line=line.substring(this.curMatcher.end()); // advance to the jump instruction
+        this.curMatcher= JUMP_PATTERN.matcher(line);
+        if(this.curMatcher.lookingAt())
+        { //set the jump instruction into curJump
+            this.curJump=line.substring(0,this.curMatcher.end());
+            // convert the c instruction
+            this.convert.convertCInstruction(null,this.curInstruction,this.curJump,this.shift);
+        }
+    }
+
+    /**
+     * parse the jump condition, check if it a compute instruction or a register
+     * @param line an asm line
+     * @return a string of asm line minus the jump condition
+     */
+    private String jumpCondition(String line){
+        this.curMatcher= COMPUTE_PATTERN.matcher(line);
+        if(this.curMatcher.find()) // check for a instruction
         { //set the destination registers in curRegisters
             this.curInstruction=line.substring(0,this.curMatcher.end()-1);
-            line=line.substring(this.curMatcher.end()); // advance to the jump instruction
-            this.curMatcher= JUMP_PATTERN.matcher(line);
-            if(this.curMatcher.lookingAt())
-            { //set the jump instruction into curJump
-                this.curJump=line.substring(0,this.curMatcher.end());
-                // convert the c instruction
-                this.convert.convertCInstruction(null,this.curInstruction,this.curJump);
+        }else{
+            this.curMatcher=SHIFT_PATTERN.matcher(line);
+            if(this.curMatcher.find()){
+                this.shift=line.substring(0,this.curMatcher.end()-1);
+            }
+            this.curMatcher= JUMP_REGISTERS_PATTERN.matcher(line);
+            if(this.curMatcher.find()) // check for a instruction
+            { //set the destination registers in curRegisters
+                this.curInstruction=line.substring(0,this.curMatcher.end()-1);
             }
         }
+        return line;
+    }
+
+    /**
+     * reset the data members of the parser
+     */
+    private void resetAttributes(){
+        this.shift=this.curInstruction=this.curRegisters=this.curJump=null;
     }
 }
